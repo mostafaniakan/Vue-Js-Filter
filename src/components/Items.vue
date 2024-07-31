@@ -1,40 +1,60 @@
 <script setup>
 import { onMounted, ref, watch } from 'vue'
-let names = ref()
+
+let names = ref([])
 let filterd = ref()
 
 onMounted(() => {
-    const storedNames = localStorage.getItem('Names')
-    names.value = JSON.parse(storedNames)
-    filterd.value = JSON.parse(storedNames)
-
+    load()
 })
-let search = ref("")
-
-watch(search, (newSearch, oldSearch) => {
+let search = ref('')
+let newName = ref('')
+watch(search, (newSearch) => {
     if (newSearch) {
         newSearch = newSearch.trim()
         filterd.value = names.value.filter(item => item.name.toLowerCase().search(newSearch.toLowerCase()) !== -1)
     } else {
-        filterd.value = names.value;
+        filterd.value = names.value
     }
 })
 
 const filterdName = (name) => {
-    let  fundedIndex= name.toLowerCase().search(search.value.toLowerCase());
-    if(fundedIndex !== -1) {
-        let first = name.slice(0,fundedIndex);
-        let second = name.slice(fundedIndex, fundedIndex + search.value.length);
-        let third = name.slice(fundedIndex + search.value.length , name.length);
-        console.log(first,second);
-
-        return first +'<b>' + second + '</b>' + third;
-    }else {
-        return name;
-    }
+    const regex = new RegExp(`(${search.value})`, 'gi')
+    return name.replace(regex, '<b>$1</b>')
 }
+
+function load() {
+    const storedNames = localStorage.getItem('Names');
+    console.log(storedNames)
+    names.value = JSON.parse(storedNames)
+    filterd.value = JSON.parse(storedNames)
+}
+
+function save() {
+    localStorage.setItem('Names', JSON.stringify(names.value))
+}
+
 const DeleteName = (id) => {
     names.value = names.value.filter(item => item.id !== id)
+    filterd.value = names.value
+    search.value = ''
+    save()
+}
+const addName = () => {
+    if (newName.value) {
+        try {
+            names.value.push({
+                id: names.value.length + 1,
+                name: newName.value
+            })
+            filterd.value = names.value
+            newName.value = ''
+            save()
+        } catch (e) {
+            console.log(e)
+        }
+    }
+    console.log(names.value)
 }
 </script>
 
@@ -70,12 +90,17 @@ const DeleteName = (id) => {
             </table>
         </div>
     </section>
+    <section>
+        <input v-model="newName" type="text" placeholder="Name">
+        <button @click="addName">Add</button>
+    </section>
 </template>
 
 <style>
-b{
+b {
     color: #F50057 !important;
 }
+
 h1 {
     font-size: 30px;
     color: #fff;
